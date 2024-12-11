@@ -82,12 +82,12 @@ for file_path in stopword_files:
 positive_words = load_word_dict('Test Assignment/MasterDictionary/positive-words.txt')
 negative_words = load_word_dict('Test Assignment/MasterDictionary/negative-words.txt')
 
-# Create Output DataFrame
+# Create Output DataFrame with Correct Column Order
 output = pd.DataFrame(columns=[
-    'URL_ID', 'URL', 'POSITIVE_SCORE', 'NEGATIVE_SCORE', 'POLARITY_SCORE', 
-    'SUBJECTIVITY_SCORE', 'AVG_SENTENCE_LENGTH', 'COMPLEX_WORD_COUNT', 
-    'WORD_COUNT', 'SYLLABLE_PER_WORD', 'PERSONAL_PRONOUNS', 'AVG_WORD_LENGTH',
-    'FOG_INDEX'
+    'URL ID', 'URL', 'POSITIVE SCORE', 'NEGATIVE SCORE', 'POLARITY SCORE',
+    'SUBJECTIVITY SCORE', 'AVG SENTENCE LENGTH', 'PERCENTAGE OF COMPLEX WORDS',
+    'FOG INDEX', 'AVG NUMBER OF WORDS PER SENTENCE', 'COMPLEX WORD COUNT',
+    'WORD COUNT', 'SYLLABLE PER WORD', 'PERSONAL PRONOUNS', 'AVG WORD LENGTH'
 ])
 
 # Calculate number of syllables in a word
@@ -108,7 +108,7 @@ for index, row in data.iterrows():
     text = extract_article_text(url)
     if text:
         # Save extracted text
-        with open(f"Test Assignment/Extracted Text/{url_id}.txt", 'w', encoding='utf-8') as file:
+        with open(f"Extracted Text/{url_id}.txt", 'w', encoding='utf-8') as file:
             file.write(text)
         
         # Clean text and compute metrics
@@ -128,23 +128,30 @@ for index, row in data.iterrows():
         syllable_per_word = sum(syllable_count(word) for word in cleaned_words) / total_words if total_words > 0 else 0
         personal_pronouns = sum(1 for word in cleaned_words if word in ['i', 'we', 'my', 'ours', 'us'])
         avg_word_length = sum(len(word) for word in cleaned_words) / total_words if total_words > 0 else 0
+        
+        # Newly added metrics
+        percentage_complex_words = (complex_word_count / total_words) * 100 if total_words > 0 else 0
+        avg_words_per_sentence = total_words / num_sentences if num_sentences > 0 else 0
+        
         fog_index = 0.4 * (avg_sentence_length + (complex_word_count / total_words)) if total_words > 0 else 0
 
         # Populate output DataFrame
         output = pd.concat([output, pd.DataFrame([{
-            'URL_ID': url_id,
+            'URL ID': url_id,
             'URL': url,
-            'POSITIVE_SCORE': positive_score,
-            'NEGATIVE_SCORE': negative_score,
-            'POLARITY_SCORE': polarity_score,
-            'SUBJECTIVITY_SCORE': subjectivity_score,
-            'AVG_SENTENCE_LENGTH': avg_sentence_length,
-            'COMPLEX_WORD_COUNT': complex_word_count,
-            'WORD_COUNT': total_words,
-            'SYLLABLE_PER_WORD': syllable_per_word,
-            'PERSONAL_PRONOUNS': personal_pronouns,
-            'AVG_WORD_LENGTH': avg_word_length,
-            'FOG_INDEX': fog_index
+            'POSITIVE SCORE': positive_score,
+            'NEGATIVE SCORE': negative_score,
+            'POLARITY SCORE': polarity_score,
+            'SUBJECTIVITY SCORE': subjectivity_score,
+            'AVG SENTENCE LENGTH': avg_sentence_length,
+            'PERCENTAGE OF COMPLEX WORDS': percentage_complex_words,
+            'FOG INDEX': fog_index,
+            'AVG NUMBER OF WORDS PER SENTENCE': avg_words_per_sentence,
+            'COMPLEX WORD COUNT': complex_word_count,
+            'WORD COUNT': total_words,
+            'SYLLABLE PER WORD': syllable_per_word,
+            'PERSONAL PRONOUNS': personal_pronouns,
+            'AVG WORD LENGTH': avg_word_length
         }])], ignore_index=True)
 
 # Save Final Output
