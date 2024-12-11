@@ -6,10 +6,9 @@ import re
 import os
 from nltk.corpus import stopwords
 
-# Load Excel File
 data = pd.read_excel(r'Test Assignment/Input.xlsx')
 
-# Initialize NLTK modules
+# NLTK modules
 nltk.download('punkt_tab')
 nltk.download('stopwords')
 
@@ -56,20 +55,26 @@ def load_word_dict(file_path):
         print(f"Dictionary file {file_path} not found.")
         return set()
 
+def count_personal_pronouns(text):
+    # Regex to match personal pronouns
+    pronoun_pattern = r'\b(I|we|my|ours|us)\b'
+    matches = re.findall(pronoun_pattern, text, flags=re.IGNORECASE)
+    return len(matches)
+
 # Stop Words from Custom Files
 stop_words = set(stopwords.words('english'))
-stopword_files = [
-    'Test Assignment\StopWords\StopWords_Auditor.txt',
-    'Test Assignment\StopWords\StopWords_Currencies.txt',
-    'Test Assignment\StopWords\StopWords_DatesandNumbers.txt',
-    'Test Assignment\StopWords\StopWords_Generic.txt',
-    'Test Assignment\StopWords\StopWords_GenericLong.txt',
-    'Test Assignment\StopWords\StopWords_Geographic.txt',
-    'Test Assignment\StopWords\StopWords_Names.txt'
+stopwords_files = [
+    r'Test Assignment\StopWords\StopWords_Auditor.txt',
+    r'Test Assignment\StopWords\StopWords_Currencies.txt',
+    r'Test Assignment\StopWords\StopWords_DatesandNumbers.txt',
+    r'Test Assignment\StopWords\StopWords_Generic.txt',
+    r'Test Assignment\StopWords\StopWords_GenericLong.txt',
+    r'Test Assignment\StopWords\StopWords_Geographic.txt',
+    r'Test Assignment\StopWords\StopWords_Names.txt'
 ]
 
-# Loading stopword file
-for file_path in stopword_files:
+# Loading stopword files
+for file_path in stopwords_files:
     if os.path.isfile(file_path):
         with open(file_path, 'r') as file:
             custom_words = {line.strip().lower() for line in file.readlines()}
@@ -89,13 +94,13 @@ output = pd.DataFrame(columns=[
     'WORD COUNT', 'SYLLABLE PER WORD', 'PERSONAL PRONOUNS', 'AVG WORD LENGTH'
 ])
 
-# number of syllables in a word
+# Number of syllables in a word
 def syllable_count(word):
     word = word.lower()
     syllables = 0
     vowels = "aeiou"
     # Exclude words ending in "es" or "ed"
-    if word in ['es', 'ed']:  
+    if word.endswith(('es', 'ed')):  
         return 0
     for char in word:
         if char in vowels:
@@ -110,6 +115,9 @@ for index, row in data.iterrows():
         # Save extracted text
         with open(f"Extracted Text/{url_id}.txt", 'w', encoding='utf-8') as file:
             file.write(text)
+
+        # Count personal pronouns
+        personal_pronouns = count_personal_pronouns(text)
         
         # Clean text and compute metrics
         cleaned_words = clean_text(text, stop_words)
@@ -121,12 +129,11 @@ for index, row in data.iterrows():
         subjectivity_score = (positive_score + negative_score) / (len(cleaned_words) + 0.000001)
 
         # Readability metrics
-        num_sentences = len(re.findall(r'\.', text))  # Simple sentence count by period
+        num_sentences = len(re.findall(r'\.', text))
         avg_sentence_length = len(cleaned_words) / num_sentences if num_sentences > 0 else 0
         complex_word_count = sum(1 for word in cleaned_words if syllable_count(word) > 2)
         total_words = len(cleaned_words)
         syllable_per_word = sum(syllable_count(word) for word in cleaned_words) / total_words if total_words > 0 else 0
-        personal_pronouns = sum(1 for word in cleaned_words if word in ['i', 'we', 'my', 'ours', 'us'])
         avg_word_length = sum(len(word) for word in cleaned_words) / total_words if total_words > 0 else 0
         
         percentage_complex_words = (complex_word_count / total_words) * 100 if total_words > 0 else 0
@@ -134,7 +141,7 @@ for index, row in data.iterrows():
         
         fog_index = 0.4 * (avg_sentence_length + (complex_word_count / total_words)) if total_words > 0 else 0
 
-        # output DataFrame
+        # Output DataFrame
         output = pd.concat([output, pd.DataFrame([{
             'URL ID': url_id,
             'URL': url,
