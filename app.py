@@ -21,14 +21,23 @@ def extract_article_text(url):
         soup = BeautifulSoup(response.content, 'html.parser')
 
         # Extract Title
-        title = soup.find('h1', class_='entry-title').get_text(strip=True)
+        title = soup.find('h1', class_='entry-title').get_text(strip=True) if soup.find('h1', class_='entry-title') else 'No Title'
 
-        # Extract Article Text
-        content = soup.find('div', class_='td-post-content')
-        paragraphs = content.find_all('p') if content else []
-        article_text = ' '.join(p.get_text(strip=True) for p in paragraphs)
+        # Extract text from <p>, <li>.
+        article_text = ''
 
-        return title + '\n' + article_text
+        # Extract text from paragraph tags <p>
+        paragraphs = soup.find_all('p')
+        article_text += ' '.join(p.get_text(strip=True) for p in paragraphs)
+
+        # Extract text from list items <li>
+        list_items = soup.find_all('li')
+        article_text += ' '.join(li.get_text(strip=True) for li in list_items)
+
+        # Clean the article text by removing excessive spaces
+        article_text = re.sub(r'\s+', ' ', article_text).strip()
+
+        return "Title: " + title + '\n' + 'Article Text: ' + article_text
     except Exception as e:
         print(f"Error extracting {url}: {e}")
         return ""
@@ -75,7 +84,7 @@ negative_words = load_word_dict('Test Assignment/MasterDictionary/negative-words
 
 # Create Output DataFrame
 output = pd.DataFrame(columns=[
-    'URL_ID', 'POSITIVE_SCORE', 'NEGATIVE_SCORE', 'POLARITY_SCORE', 
+    'URL_ID', 'URL', 'POSITIVE_SCORE', 'NEGATIVE_SCORE', 'POLARITY_SCORE', 
     'SUBJECTIVITY_SCORE', 'AVG_SENTENCE_LENGTH', 'COMPLEX_WORD_COUNT', 
     'WORD_COUNT', 'SYLLABLE_PER_WORD', 'PERSONAL_PRONOUNS', 'AVG_WORD_LENGTH',
     'FOG_INDEX'
@@ -124,6 +133,7 @@ for index, row in data.iterrows():
         # Populate output DataFrame
         output = pd.concat([output, pd.DataFrame([{
             'URL_ID': url_id,
+            'URL': url,
             'POSITIVE_SCORE': positive_score,
             'NEGATIVE_SCORE': negative_score,
             'POLARITY_SCORE': polarity_score,
